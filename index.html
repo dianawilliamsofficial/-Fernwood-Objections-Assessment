@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fernwood — Objection Handling Assessment</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --charcoal-dark: #2A2A2A;
+  --charcoal-mid: #3D3D3D;
+  --charcoal-light: #5A5A5A;
+  --charcoal-pale: #F0F0F0;
+  --magenta: #C8007D;
+  --magenta-light: #D93B96;
+  --magenta-pale: #FCE8F5;
+  --gold: #C9A84C;
+  --gold-light: #E0C070;
+  --gold-pale: #FAF5E8;
+  --cream: #FAFAF8;
+  --charcoal: #1A1A1A;
+  --mid: #555555;
+  --light: #999999;
+  --border: rgba(42,42,42,0.13);
+  --shadow: 0 4px 28px rgba(42,42,42,0.10);
+  --shadow-lg: 0 16px 56px rgba(42,42,42,0.15);
+  --white: #FFFFFF;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--charcoal); min-height: 100vh; }
+
+.header { background: var(--charcoal-dark); position: sticky; top: 0; z-index: 300; box-shadow: 0 2px 20px rgba(0,0,0,0.22); }
+.header-inner { max-width: 860px; margin: 0 auto; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+.logo { display: flex; align-items: center; gap: 12px; }
+.logo-mark { width: 36px; height: 36px; background: var(--magenta); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-weight: 900; color: white; font-size: 17px; }
+.logo-text { font-family: 'Playfair Display', serif; color: white; font-size: 16px; font-weight: 600; line-height: 1.2; }
+.logo-sub { color: rgba(255,255,255,0.5); font-size: 9.5px; letter-spacing: 1.8px; text-transform: uppercase; }
+.header-badge { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18); border-radius: 20px; padding: 4px 14px; font-size: 11.5px; color: var(--gold-light); font-weight: 500; }
+
+.hero { background: var(--charcoal-dark); padding: 52px 32px 80px; position: relative; overflow: hidden; }
+.hero::before { content: ''; position: absolute; top: -80px; right: -80px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(200,0,125,0.18) 0%, transparent 65%); pointer-events: none; }
+.hero::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 50px; background: var(--cream); clip-path: ellipse(55% 100% at 50% 100%); }
+.hero-inner { max-width: 860px; margin: 0 auto; position: relative; z-index: 1; }
+.hero-eyebrow { display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(201,168,76,0.35); background: rgba(201,168,76,0.1); border-radius: 3px; padding: 5px 16px; font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--gold-light); margin-bottom: 22px; font-weight: 500; }
+.hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(32px, 5vw, 52px); font-weight: 900; color: white; line-height: 1.1; margin-bottom: 8px; }
+.hero h1 em { color: var(--magenta-light); font-style: italic; font-weight: 400; }
+.hero-rule { width: 44px; height: 2px; background: var(--gold); margin: 18px 0; }
+.hero-desc { color: rgba(255,255,255,0.6); font-size: 15px; line-height: 1.8; max-width: 540px; font-weight: 300; }
+
+.wrapper { max-width: 860px; margin: 0 auto; padding: 40px 32px 80px; }
+
+.screen { display: none; animation: fadeUp 0.4s ease; }
+.screen.active { display: block; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+.reg-card { background: white; border-radius: 20px; border: 1px solid var(--border); box-shadow: var(--shadow-lg); overflow: hidden; }
+.reg-card-header { background: var(--charcoal-dark); padding: 28px 36px; }
+.reg-card-header h2 { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: white; margin-bottom: 4px; }
+.reg-card-header p { color: rgba(255,255,255,0.6); font-size: 13.5px; }
+.reg-card-body { padding: 36px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+@media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+.field { display: flex; flex-direction: column; gap: 7px; }
+.field label { font-size: 11.5px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--charcoal-dark); }
+.field input, .field select { border: 1.5px solid var(--border); border-radius: 9px; padding: 12px 16px; font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--charcoal); background: var(--cream); transition: border-color 0.2s; outline: none; }
+.field input:focus, .field select:focus { border-color: var(--charcoal-light); background: white; }
+.field input::placeholder { color: var(--light); }
+.about-steps { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
+@media (max-width: 600px) { .about-steps { grid-template-columns: 1fr; } }
+.about-step { display: flex; gap: 10px; align-items: flex-start; }
+.step-num { width: 26px; height: 26px; background: var(--magenta); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+.step-info { font-size: 13px; line-height: 1.5; color: var(--mid); }
+.step-info strong { display: block; color: var(--charcoal-dark); font-weight: 600; margin-bottom: 2px; }
+
+.stage-tracker { background: white; border-radius: 16px; border: 1px solid var(--border); padding: 24px 28px; margin-bottom: 28px; box-shadow: var(--shadow); }
+.tracker-label { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--light); font-weight: 600; margin-bottom: 16px; }
+.tracker-steps { display: flex; align-items: center; }
+.tracker-step { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; position: relative; }
+.tracker-step:not(:last-child)::after { content: ''; position: absolute; top: 14px; left: 50%; width: 100%; height: 2px; background: var(--border); z-index: 0; }
+.tracker-step.done::after { background: var(--charcoal-light); }
+.tracker-dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); background: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--light); z-index: 1; transition: all 0.3s; }
+.tracker-step.done .tracker-dot { background: var(--charcoal-light); border-color: var(--charcoal-light); color: white; }
+.tracker-step.active .tracker-dot { background: var(--magenta); border-color: var(--magenta); color: white; box-shadow: 0 0 0 4px rgba(200,0,125,0.2); }
+.tracker-name { font-size: 9.5px; color: var(--light); text-align: center; font-weight: 500; line-height: 1.3; max-width: 70px; }
+.tracker-step.done .tracker-name, .tracker-step.active .tracker-name { color: var(--charcoal-dark); font-weight: 600; }
+
+.stage-card { background: white; border-radius: 20px; border: 1px solid var(--border); box-shadow: var(--shadow-lg); overflow: hidden; margin-bottom: 20px; }
+.stage-card-hd { padding: 26px 32px; display: flex; align-items: flex-start; gap: 18px; }
+.stage-num-badge { width: 48px; height: 48px; background: var(--magenta); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 900; color: white; flex-shrink: 0; }
+.stage-hd-text h2 { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--charcoal-dark); margin-bottom: 4px; }
+.stage-hd-text .stage-subtitle { color: var(--magenta); font-size: 12.5px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px; }
+.stage-hd-text p { color: var(--mid); font-size: 13.5px; line-height: 1.5; }
+.stage-divider { height: 1px; background: var(--border); margin: 0 32px; }
+
+.objection-panel { margin: 24px 32px; background: linear-gradient(135deg, var(--charcoal-dark) 0%, var(--charcoal-mid) 100%); border-radius: 14px; padding: 22px 24px; }
+.objection-bubble { background: rgba(200,0,125,0.15); border: 1px solid rgba(200,0,125,0.3); border-radius: 14px; padding: 18px 20px; margin-bottom: 16px; position: relative; }
+.objection-bubble::before { content: '"'; font-family: 'Playfair Display', serif; font-size: 52px; color: var(--magenta); position: absolute; top: -8px; left: 14px; line-height: 1; }
+.objection-bubble p { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; color: white; line-height: 1.5; padding-left: 24px; font-style: italic; }
+.objection-bubble .member-tag { font-family: 'DM Sans', sans-serif; font-size: 11px; color: var(--magenta-light); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; margin-bottom: 8px; padding-left: 24px; font-style: normal; }
+.s-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold-light); margin-bottom: 14px; font-weight: 500; }
+.scenario-tasks { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+.scenario-tasks li { display: flex; align-items: flex-start; gap: 9px; font-size: 13px; color: rgba(255,255,255,0.8); line-height: 1.5; }
+.scenario-tasks li::before { content: '→'; color: var(--gold-light); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+
+.key-lines { margin: 0 32px 24px; }
+.key-line-item { display: flex; gap: 12px; align-items: flex-start; background: var(--gold-pale); border-left: 3px solid var(--gold); border-radius: 0 10px 10px 0; padding: 13px 16px; margin-bottom: 10px; }
+.kl-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.kl-content { font-size: 13.5px; line-height: 1.6; }
+.kl-content strong { display: block; color: var(--gold); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; }
+.kl-content span { color: var(--charcoal-dark); font-style: italic; font-weight: 500; }
+
+.rubric-section { margin: 0 32px 24px; }
+.rubric-label { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--charcoal-dark); font-weight: 600; margin-bottom: 12px; }
+.rubric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.rubric-item { background: var(--charcoal-pale); border-radius: 10px; padding: 14px 16px; border-left: 3px solid var(--charcoal-light); }
+.rubric-item h4 { font-size: 12.5px; font-weight: 700; color: var(--charcoal-dark); margin-bottom: 5px; }
+.rubric-item p { font-size: 12px; color: var(--mid); line-height: 1.5; }
+
+.recorder-section { margin: 0 32px 32px; }
+.recorder-box { border: 2px dashed var(--border); border-radius: 16px; padding: 32px; text-align: center; background: rgba(42,42,42,0.02); transition: all 0.25s; }
+.recorder-box.has-video { border-color: var(--charcoal-light); background: var(--charcoal-pale); border-style: solid; }
+.rec-icon { font-size: 48px; margin-bottom: 16px; }
+.rec-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--charcoal-dark); margin-bottom: 6px; }
+.rec-desc { color: var(--mid); font-size: 13.5px; line-height: 1.6; margin-bottom: 24px; max-width: 420px; margin-left: auto; margin-right: auto; }
+.video-container { position: relative; border-radius: 12px; overflow: hidden; background: black; margin-bottom: 16px; }
+video { width: 100%; display: block; border-radius: 12px; max-height: 360px; object-fit: cover; }
+.video-label { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); color: white; font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+.timer { font-family: 'DM Mono', monospace; font-size: 32px; font-weight: 500; color: var(--charcoal-dark); margin-bottom: 12px; }
+.timer.recording-timer { color: var(--magenta); }
+
+.btn { padding: 13px 28px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; font-family: 'DM Sans', sans-serif; display: inline-flex; align-items: center; gap: 8px; }
+.btn-primary { background: var(--magenta); color: white; }
+.btn-primary:hover { background: var(--magenta-light); transform: translateY(-1px); }
+.btn-forest { background: var(--charcoal-dark); color: white; }
+.btn-forest:hover { background: var(--charcoal-mid); transform: translateY(-1px); }
+.btn-ghost { background: white; color: var(--charcoal-dark); border: 2px solid var(--border); }
+.btn-ghost:hover { border-color: var(--charcoal-dark); }
+.btn-outline-red { background: white; color: var(--magenta); border: 2px solid var(--magenta); }
+.btn-outline-red:hover { background: var(--magenta-pale); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+.btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+.btn-row-right { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap; }
+
+.submitted-banner { background: var(--charcoal-pale); border: 1px solid var(--charcoal-light); border-radius: 12px; padding: 18px 20px; display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.submitted-banner .check { width: 36px; height: 36px; background: var(--charcoal-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; flex-shrink: 0; }
+.submitted-banner p { font-size: 14px; color: var(--charcoal-dark); font-weight: 500; }
+.submitted-banner p span { font-weight: 400; color: var(--mid); display: block; font-size: 13px; }
+
+.completion-card { background: white; border-radius: 20px; border: 1px solid var(--border); padding: 52px 40px; text-align: center; box-shadow: var(--shadow-lg); }
+.completion-icon { font-size: 64px; margin-bottom: 20px; }
+.completion-card h2 { font-family: 'Playfair Display', serif; font-size: 34px; font-weight: 900; color: var(--charcoal-dark); margin-bottom: 10px; }
+.completion-card .congrats { color: var(--magenta); font-size: 13px; letter-spacing: 2px; text-transform: uppercase; font-weight: 600; margin-bottom: 12px; }
+.completion-card p { color: var(--mid); font-size: 15px; line-height: 1.7; max-width: 480px; margin: 0 auto 28px; }
+.completion-meta { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin: 28px 0; max-width: 500px; margin-left: auto; margin-right: auto; }
+.meta-box { background: var(--charcoal-pale); border-radius: 12px; padding: 16px; }
+.meta-box .meta-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--light); margin-bottom: 4px; }
+.meta-box .meta-val { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--charcoal-dark); }
+.what-next { background: var(--charcoal-pale); border-radius: 14px; padding: 22px 24px; text-align: left; margin-top: 24px; }
+.what-next h4 { font-size: 14px; font-weight: 700; color: var(--charcoal-dark); margin-bottom: 12px; }
+.next-item { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; font-size: 13.5px; color: var(--mid); line-height: 1.5; }
+.next-item::before { content: '✓'; color: var(--charcoal-light); font-weight: 700; flex-shrink: 0; }
+
+.info-tip { background: var(--charcoal-pale); border-left: 3px solid var(--charcoal-light); border-radius: 0 8px 8px 0; padding: 12px 16px; font-size: 13px; color: var(--mid); line-height: 1.6; margin-bottom: 16px; }
+.divider-line { height: 1px; background: var(--border); margin: 28px 0; }
+
+.save-toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--charcoal-dark); color: white; padding: 12px 22px; border-radius: 30px; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; z-index: 9999; box-shadow: 0 8px 32px rgba(0,0,0,0.3); transition: transform 0.4s cubic-bezier(.4,0,.2,1), opacity 0.4s; opacity: 0; pointer-events: none; white-space: nowrap; }
+.save-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+html.is-mobile .recorder-box, html.is-mobile .upload-area, html.is-mobile button[onclick*="startRecording"], html.is-mobile button[onclick*="submitStage"] { display: none !important; }
+html.is-mobile .mobile-rec-notice { display: block !important; }
+
+@media (max-width: 600px) {
+  .wrapper { padding: 24px 16px 60px; }
+  .stage-card-hd { padding: 20px; flex-direction: column; gap: 12px; }
+  .stage-divider, .objection-panel, .key-lines, .rubric-section, .recorder-section { margin-left: 20px; margin-right: 20px; }
+  .completion-meta { grid-template-columns: 1fr 1fr; }
+  .reg-card-body { padding: 24px; }
+}
+</style>
+
+<script>
+(function() {
+  var ua = navigator.userAgent || navigator.vendor || window.opera;
+  if (/android/i.test(ua) || (/iPad|iPhone|iPod/.test(ua) && !window.MSStream)) {
+    document.documentElement.classList.add('is-mobile');
+  }
+})();
+</script>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-mark">F</div>
+      <div>
+        <div class="logo-text">Fernwood Fitness</div>
+        <div class="logo-sub">Sales Assessment Platform</div>
+      </div>
+    </div>
+    <div class="header-badge">Objection Handling · Role-Play Assessment</div>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-eyebrow">💬 Fernwood Sales Training</div>
+    <h1>Objection Handling<br><em>Assessment</em></h1>
+    <div class="hero-rule"></div>
+    <p class="hero-desc">Six real objections. Six chances to stay calm, connect to goals, and keep the conversation moving. Record your response to each one and show your manager how you handle the moment that decides the sale.</p>
+  </div>
+</div>
+
+<div class="wrapper">
+
+  <!-- SCREEN 1: REGISTRATION -->
+  <div class="screen active" id="screen-reg">
+    <div class="reg-card">
+      <div class="reg-card-header">
+        <h2>Before You Start</h2>
+        <p>Read through all six objections first, then fill in your details and begin.</p>
+      </div>
+      <div class="reg-card-body">
+
+        <div id="resumeBanner" style="display:none; background:var(--charcoal-dark); border-radius:14px; padding:20px 22px; margin-bottom:22px; border-left:4px solid var(--magenta);">
+          <div style="display:flex; align-items:flex-start; gap:14px; flex-wrap:wrap;">
+            <div style="flex:1; min-width:200px;">
+              <div style="font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--magenta-light); font-weight:600; margin-bottom:6px;">Saved Progress Found</div>
+              <div style="color:white; font-family:'Playfair Display',serif; font-size:17px; font-weight:700; margin-bottom:4px;"><span id="resumeName"></span> — <span id="resumeClub"></span></div>
+              <div style="color:rgba(255,255,255,0.6); font-size:13px;"><span id="resumeStages"></span></div>
+              <div style="color:rgba(255,255,255,0.4); font-size:12px;"><span id="resumeDate"></span></div>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+              <button class="btn btn-primary" onclick="resumeAssessment()">Resume Where I Left Off →</button>
+              <button class="btn btn-ghost" onclick="discardAndStart()" style="font-size:13px; padding:10px 16px; color:rgba(255,255,255,0.5); border-color:rgba(255,255,255,0.15); background:transparent;">Start Fresh</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:var(--charcoal-pale); border-radius:12px; padding:18px 20px; margin-bottom:24px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--charcoal-light); margin-bottom:12px;">The six objections</div>
+          <div class="about-steps">
+            <div class="about-step"><div class="step-num">1</div><div class="step-info"><strong>"I need to think about it"</strong>The classic delay — reconnect to urgency.</div></div>
+            <div class="about-step"><div class="step-num">2</div><div class="step-info"><strong>"I'm not sure if I'll stick to it"</strong>Fear of failure — the NMJ is your answer.</div></div>
+            <div class="about-step"><div class="step-num">3</div><div class="step-info"><strong>"It's too expensive"</strong>Price resistance — reframe value vs cost.</div></div>
+            <div class="about-step"><div class="step-num">4</div><div class="step-info"><strong>"I need to speak to my husband"</strong>Third-party stall — isolate and involve.</div></div>
+            <div class="about-step"><div class="step-num">5</div><div class="step-info"><strong>"I don't have time"</strong>Time barrier — flip the energy argument.</div></div>
+            <div class="about-step"><div class="step-num">6</div><div class="step-info"><strong>"I'm looking at other gyms"</strong>Comparison shopping — anchor to women-only.</div></div>
+          </div>
+        </div>
+
+        <div style="background:white; border:1.5px solid var(--border); border-left:4px solid var(--magenta); border-radius:0 12px 12px 0; padding:18px 20px; margin-bottom:24px;">
+          <div style="display:flex; gap:12px; align-items:flex-start;">
+            <div style="font-size:22px; flex-shrink:0;">💡</div>
+            <div>
+              <div style="font-size:14px; font-weight:700; color:var(--charcoal-dark); margin-bottom:6px;">How this works</div>
+              <div style="font-size:13.5px; color:var(--mid); line-height:1.7;">Each stage presents Jodie's objection. Record your response — handle the objection using the Fernwood framework and bring her back to her goals. Submit to unlock the next stage. You can come back across multiple sessions using the same browser.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--charcoal-light); margin-bottom:14px;">Your Details</div>
+        <div class="form-grid">
+          <div class="field"><label>First Name</label><input type="text" id="regFirstName" placeholder="e.g. Sarah" /></div>
+          <div class="field"><label>Last Name</label><input type="text" id="regLastName" placeholder="e.g. Mitchell" /></div>
+          <div class="field">
+            <label>Club / Location</label>
+            <select id="regClub">
+              <option value="">Select your club</option>
+              <option>Fernwood Albury</option><option>Fernwood Annandale</option><option>Fernwood Ascot Vale</option>
+              <option>Fernwood Auburn</option><option>Fernwood Ballarat</option><option>Fernwood Bankstown</option>
+              <option>Fernwood Belconnen</option><option>Fernwood Bellerive</option><option>Fernwood Bendigo</option>
+              <option>Fernwood Beverly Hills</option><option>Fernwood Braddon</option><option>Fernwood Browns Plains</option>
+              <option>Fernwood Bulleen</option><option>Fernwood Cairnlea</option><option>Fernwood Camberwell</option>
+              <option>Fernwood Campbelltown</option><option>Fernwood Canberra City</option><option>Fernwood Cannington</option>
+              <option>Fernwood Capalaba</option><option>Fernwood Carindale</option><option>Fernwood Carlton</option>
+              <option>Fernwood Castle Hill</option><option>Fernwood Central Coast</option><option>Fernwood Chermside</option>
+              <option>Fernwood Chirnside Park</option><option>Fernwood Clayton</option><option>Fernwood Craigieburn</option>
+              <option>Fernwood Cranbourne</option><option>Fernwood Darwin</option><option>Fernwood Epping</option>
+              <option>Fernwood Everton Park</option><option>Fernwood Ferntree Gully</option><option>Fernwood NSO</option>
+              <option>Fernwood Gladesville</option><option>Fernwood Gregory Hills</option><option>Fernwood Gungahlin</option>
+              <option>Fernwood Hornsby</option><option>Fernwood Kirrawee</option><option>Fernwood Liverpool</option>
+              <option>Fernwood Loganholme</option><option>Fernwood Marion</option><option>Fernwood Maroochydore</option>
+              <option>Fernwood Marsden Park</option><option>Fernwood Melton</option><option>Fernwood Melville</option>
+              <option>Fernwood Miranda</option><option>Fernwood Mitcham</option><option>Fernwood Morayfield</option>
+              <option>Fernwood Mordialloc</option><option>Fernwood Mornington</option><option>Fernwood Narre Warren</option>
+              <option>Fernwood Newstead</option><option>Fernwood Noosa</option><option>Fernwood North Lakes</option>
+              <option>Fernwood North Rocks</option><option>Fernwood Parramatta</option><option>Fernwood Penrith</option>
+              <option>Fernwood Petrie</option><option>Fernwood Preston</option><option>Fernwood Prospect</option>
+              <option>Fernwood Richmond</option><option>Fernwood Robina</option><option>Fernwood Rockdale</option>
+              <option>Fernwood Ryde</option><option>Fernwood Salisbury</option><option>Fernwood Seven Hills</option>
+              <option>Fernwood Shellharbour</option><option>Fernwood Shepparton</option><option>Fernwood St Agnes</option>
+              <option>Fernwood St Kilda</option><option>Fernwood Tarneit</option><option>Fernwood Toowoomba</option>
+              <option>Fernwood Tuggeranong</option><option>Fernwood Tullamarine</option><option>Fernwood Underwood</option>
+              <option>Fernwood Waurn Ponds</option><option>Fernwood Wetherill Park</option><option>Fernwood Woonona</option>
+              <option>Fernwood Yarraville</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Your Role</label>
+            <select id="regRole">
+              <option value="">Select your role</option>
+              <option>Membership Consultant</option><option>Club Manager</option><option>Assistant Manager</option>
+              <option>Senior Membership Consultant</option><option>Fitness Coach</option><option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="btn-row-right">
+          <button class="btn btn-forest" onclick="startAssessment()">I've Read the Instructions — Begin →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: ASSESSMENT -->
+  <div class="screen" id="screen-assessment">
+    <div class="stage-tracker">
+      <div class="tracker-label">Your Progress</div>
+      <div class="tracker-steps" id="trackerSteps">
+        <div class="tracker-step active" id="track-0"><div class="tracker-dot">1</div><div class="tracker-name">Think About It</div></div>
+        <div class="tracker-step" id="track-1"><div class="tracker-dot">2</div><div class="tracker-name">Won't Stick</div></div>
+        <div class="tracker-step" id="track-2"><div class="tracker-dot">3</div><div class="tracker-name">Too Expensive</div></div>
+        <div class="tracker-step" id="track-3"><div class="tracker-dot">4</div><div class="tracker-name">Ask Husband</div></div>
+        <div class="tracker-step" id="track-4"><div class="tracker-dot">5</div><div class="tracker-name">No Time</div></div>
+        <div class="tracker-step" id="track-5"><div class="tracker-dot">6</div><div class="tracker-name">Other Gyms</div></div>
+      </div>
+    </div>
+    <div id="stageContainer"></div>
+  </div>
+
+  <!-- SCREEN 3: COMPLETION -->
+  <div class="screen" id="screen-complete">
+    <div class="completion-card">
+      <div class="completion-icon">🏆</div>
+      <div class="congrats">Assessment Complete</div>
+      <h2>Objections <em style="color:var(--magenta);font-style:italic;">Handled</em></h2>
+      <p>Outstanding work, <span id="completeName"></span>. You've worked through all six objections in the Fernwood Objection Handling Assessment. Your manager will review your submissions and be in touch with feedback.</p>
+      <div class="completion-meta">
+        <div class="meta-box"><div class="meta-label">Objections</div><div class="meta-val">6 / 6</div></div>
+        <div class="meta-box"><div class="meta-label">Club</div><div class="meta-val" id="completeClub" style="font-size:14px;padding-top:4px;">—</div></div>
+        <div class="meta-box"><div class="meta-label">Submitted</div><div class="meta-val" id="completeDate" style="font-size:14px;padding-top:4px;">—</div></div>
+      </div>
+      <div style="background:var(--magenta); border-radius:16px; padding:28px 32px; text-align:left; margin-bottom:24px;">
+        <div style="font-size:11px; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,0.7); font-weight:600; margin-bottom:8px;">⚠️ One last step — upload your videos</div>
+        <div style="font-family:'Playfair Display',serif; font-size:20px; font-weight:700; color:white; margin-bottom:12px; line-height:1.3;">Your 6 video files have been saved to your Downloads folder</div>
+        <div style="font-size:13.5px; color:rgba(255,255,255,0.85); line-height:1.8; margin-bottom:20px;">Find all six files in your <strong style="color:white;">Downloads folder</strong> — named <em>Objections_Stage1_...</em> through <em>Objections_Stage6_...</em> — and upload them to the shared Drive folder so your manager can review them.</div>
+        <a href="https://drive.google.com/drive/folders/1EoEM5TiyTbCoenvwEWgiUsNV5sK2sq14" target="_blank" style="display:inline-flex; align-items:center; gap:10px; background:white; color:var(--magenta); font-weight:700; font-size:15px; padding:14px 28px; border-radius:10px; text-decoration:none;">📁 Upload My Videos to Drive →</a>
+      </div>
+      <div class="what-next">
+        <h4>What happens next</h4>
+        <div class="next-item">Your manager will review all six videos against the objection handling rubric and be in touch within 3 business days.</div>
+        <div class="next-item">You'll receive feedback on your isolate technique, empathy language, NMJ usage, and re-anchor to goals.</div>
+        <div class="next-item">To continue developing, revisit the objection handling training and practise the objection you found most challenging.</div>
+      </div>
+      <div class="btn-row" style="margin-top:28px;">
+        <button class="btn btn-ghost" onclick="resetAll()">Start New Assessment</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="save-toast" id="saveToast">✓ Progress saved</div>
+
+<script>
+
+// ══ CONFIG ══
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_XVB8Hx-8PPm6RUONjxyxAyY_LScB39W4Idp94cqLQUjMVcZcbHp_XcDQDfgeHk1Wmg/exec';
+const DRIVE_UPLOAD_FOLDER_URL = 'https://drive.google.com/drive/folders/1EoEM5TiyTbCoenvwEWgiUsNV5sK2sq14';
+const STAGE_NAMES = ['Think About It','Wont Stick To It','Too Expensive','Ask Husband','No Time','Other Gyms'];
+
+// ══ STAGE DATA ══
+const STAGES = [
+  {
+    id: 0, num: '1', subtitle: 'Objection 1 of 6', title: '"I need to think about it"',
+    tagline: 'Reconnect to urgency',
+    desc: 'Jodie has heard everything and loved the tour — but now she stalls. Your job is to acknowledge her hesitation, find out what she\'s really thinking about, and reconnect her to the deadline she gave you.',
+    objection: 'That all sounds really great. I just... I think I need to go away and think about it for a bit. I\'ll probably come back next week.',
+    context: 'Jodie, 38 — wants to lose 8kg before her daughter\'s school concert in 4 months. She loved the tour and has no specific concerns — this is a classic delay.',
+    tasks: [
+      'Acknowledge her response warmly — do NOT push back immediately',
+      'Ask what specifically she needs to think about',
+      'Reconnect to her deadline: the school concert is 4 months away',
+      'Use the line: "The customer won\'t be able to solve their concerns at home without you there to guide them"',
+      'Invite her to get started today — low pressure, forward energy'
+    ],
+    keyLines: [
+      { label: 'Clarify', line: '"Absolutely — what is it specifically that you\'d like to think about? Is it the membership itself, or something about the pricing?"' },
+      { label: 'Reconnect to Deadline', line: '"Your daughter\'s concert is in 4 months — that\'s not a lot of time if you want to feel your best on that day."' },
+      { label: 'Invite', line: '"I\'d love to help you get started today so we can make sure you hit that goal — what would it take for that to happen?"' },
+    ],
+    rubric: [
+      { title: 'Doesn\'t Push Immediately', desc: 'Acknowledges the hesitation warmly before responding — doesn\'t barrel past it.' },
+      { title: 'Clarifies the Objection', desc: 'Asks what specifically she needs to think about — doesn\'t assume.' },
+      { title: 'Reconnects to Deadline', desc: 'Brings the school concert back into the conversation with genuine urgency.' },
+      { title: 'Confident Invitation', desc: 'Ends with a calm, forward-leaning invitation to get started — not a desperate pitch.' },
+    ],
+    tip: 'The pause after asking what she needs to think about is powerful. Let her answer. Most of the time she\'ll reveal the real objection hiding behind "I need to think about it".',
+    tipLabel: '⏱ Aim for 60–90 seconds'
+  },
+  {
+    id: 1, num: '2', subtitle: 'Objection 2 of 6', title: '"I\'m not sure if I\'ll stick to it"',
+    tagline: 'Fear of failure — the NMJ is your answer',
+    desc: 'This is the most important objection to master. Jodie isn\'t objecting to the gym — she\'s afraid of failing again. Your job is to validate that fear and position the New Member Journey as the direct solution.',
+    objection: 'It all looks amazing — I\'m just worried I won\'t actually keep coming. I\'ve joined gyms before and then stopped going after a month or two. I feel bad wasting money on something I won\'t use.',
+    context: 'Jodie has tried gyms before and dropped off. This fear is real and valid. She needs to believe this time will be different — and the NMJ is the proof.',
+    tasks: [
+      'Validate her concern fully — this is a real fear, not an excuse',
+      'Isolate: is it commitment, habit, accountability, or something else?',
+      'Introduce the New Member Journey as the specific answer to her fear',
+      'Walk through at least 3 steps of the NMJ and connect each to her fear of dropping off',
+      'Re-anchor to her goal and deadline before closing'
+    ],
+    keyLines: [
+      { label: 'Validate', line: '"That\'s one of the most honest things a member has ever said to me — and it tells me you\'re serious about actually getting results this time."' },
+      { label: 'NMJ Answer', line: '"That\'s exactly what the New Member Journey is designed for — it\'s the process that makes sure you DON\'T become one of those people who stops after a month."' },
+      { label: 'Re-anchor', line: '"You want to lose 8kg before your daughter\'s concert. The NMJ is how we make that happen — with you, step by step."' },
+    ],
+    rubric: [
+      { title: 'Genuine Validation', desc: 'Treats the fear as real and important — doesn\'t minimise or rush past it.' },
+      { title: 'NMJ Explanation', desc: 'Walks through the NMJ clearly and connects it specifically to her fear of dropping off.' },
+      { title: 'Personalisation', desc: 'References her specific goal and deadline — not a generic response.' },
+      { title: 'Confident Close', desc: 'Ends with belief that this time will be different because of the support structure.' },
+    ],
+    tip: 'This objection is an invitation to go deeper, not a rejection. The consultant who handles this one well is the one who earns trust — and closes the sale.',
+    tipLabel: '⏱ Aim for 60–90 seconds'
+  },
+  {
+    id: 2, num: '3', subtitle: 'Objection 3 of 6', title: '"It\'s too expensive"',
+    tagline: 'Reframe value vs cost',
+    desc: 'Jodie raises the price. Your job is not to discount — it\'s to reframe the investment against her goals, her health, and what she\'s already spending on things that aren\'t working.',
+    objection: 'I do really like it here — I just think it\'s a bit more than I was expecting to spend. I\'ve seen some cheaper options around and I\'m not sure I can justify the difference.',
+    context: 'Jodie has been at a cheap budget gym before — she quit after 2 months. She knows value and price are different things but needs you to remind her.',
+    tasks: [
+      'Acknowledge the concern without apologising for the price',
+      'Ask what she was expecting to pay — understand the gap',
+      'Break the cost down to a daily or weekly figure',
+      'Compare value: what does the extra support, environment and NMJ actually deliver?',
+      'Reference her previous experience at a cheaper gym — she already knows the difference'
+    ],
+    keyLines: [
+      { label: 'Acknowledge', line: '"I completely understand — it\'s important that it feels like the right investment. Can I ask what you were expecting to pay?"' },
+      { label: 'Daily Cost', line: '"That works out to less than a coffee a day — and this is an investment in your health, your energy, and getting to your daughter\'s concert feeling your best."' },
+      { label: 'Value Reframe', line: '"The difference between here and a $10/week gym is the support, the community, and the process that makes sure you actually use it."' },
+    ],
+    rubric: [
+      { title: 'No Apology for Price', desc: 'Holds the price confidently — doesn\'t offer discounts or apologise for the cost.' },
+      { title: 'Understands the Gap', desc: 'Asks what she was expecting to pay before responding.' },
+      { title: 'Value Reframe', desc: 'Clearly articulates what the extra investment delivers beyond a budget gym.' },
+      { title: 'Goal Connection', desc: 'Ties the investment back to her specific goal and deadline.' },
+    ],
+    tip: 'Never discount unless authorised to do so. Your job is to sell the value, not reduce the price. If she can afford a coffee every day, she can afford Fernwood.',
+    tipLabel: '⏱ Aim for 60–90 seconds'
+  },
+  {
+    id: 3, num: '4', subtitle: 'Objection 4 of 6', title: '"I need to speak to my husband"',
+    tagline: 'Third-party stall — isolate and involve',
+    desc: 'Jodie introduces her husband as a barrier. Your job is to find out whether this is a genuine decision-making process or a polite way of delaying — and either way, keep the momentum going.',
+    objection: 'I really do love it — I\'d just feel better if I spoke to my husband first before I sign anything. He handles the finances and I don\'t like to make big decisions without checking in.',
+    context: 'Jodie\'s husband may or may not be supportive. Your job is to find out — and if he\'s on board, remove this as a barrier today.',
+    tasks: [
+      'Acknowledge and respect the relationship dynamic',
+      'Find out if he knows she\'s here and whether he\'s likely to be supportive',
+      'Offer to call him now together if appropriate',
+      'If she won\'t call now, set a specific follow-up time — not "come back when you\'re ready"',
+      'Ask: "If your husband is happy with it, is there anything else that would stop you getting started?"'
+    ],
+    keyLines: [
+      { label: 'Respect & Qualify', line: '"Of course — does he know you\'re here today? Do you think he\'d be supportive of you doing something for your health?"' },
+      { label: 'Offer to Call', line: '"Would you like to give him a quick call now? I\'m happy to explain the membership and answer any questions he has."' },
+      { label: 'Isolate', line: '"If he\'s happy with it, is there anything else that would stop you getting started today?"' },
+    ],
+    rubric: [
+      { title: 'Respects the Dynamic', desc: 'Doesn\'t dismiss or minimise the husband conversation — treats it as valid.' },
+      { title: 'Qualifies Support', desc: 'Finds out whether the husband is likely to be supportive before deciding how to respond.' },
+      { title: 'Offers to Involve', desc: 'Proactively offers to call the husband together — removes the barrier on the spot.' },
+      { title: 'Isolates Further Objections', desc: 'Checks whether the husband is the only barrier, or whether there\'s something else.' },
+    ],
+    tip: 'The goal is not to bypass the husband — it\'s to find out if he\'s actually a barrier. Most of the time, if you ask "does he know you\'re here?", the answer tells you everything.',
+    tipLabel: '⏱ Aim for 60–90 seconds'
+  },
+  {
+    id: 4, num: '5', subtitle: 'Objection 5 of 6', title: '"I don\'t have time"',
+    tagline: 'Flip the energy argument',
+    desc: 'Jodie says she\'s too busy and too tired. Your job is to flip the equation — exercise gives energy, it doesn\'t take it away — and show her how Fernwood fits around her life, not the other way around.',
+    objection: 'Honestly, I\'m just so exhausted by the time I get home from work. I don\'t know when I\'d actually come. I want to, I just... I\'m not sure I have the time or the energy right now.',
+    context: 'Jodie is a teacher — her days are full and draining. She\'s not making excuses; she\'s genuinely tired. The 24-hour access and energy flip are your strongest tools here.',
+    tasks: [
+      'Validate the exhaustion — teaching is genuinely demanding',
+      'Flip the equation: exercise gives energy, it doesn\'t deplete it',
+      'Highlight 24-hour access — she can come at 5:30am, 9pm, or on weekends',
+      'Ask: "What time of day would work best for you?" — make it feel possible',
+      'Even once or twice a week is a genuine investment in her health'
+    ],
+    keyLines: [
+      { label: 'Validate & Flip', line: '"I hear you — and I know teaching is exhausting. But here\'s what I know: the members who come in tired leave with more energy than when they arrived. Exercise gives it back."' },
+      { label: '24-Hour Access', line: '"The great thing is you\'re not locked into a class time. 5:30am before school, 8pm after — we\'re open whenever suits you."' },
+      { label: 'Make It Small', line: '"Even twice a week for 45 minutes will make a measurable difference to your energy levels within a fortnight."' },
+    ],
+    rubric: [
+      { title: 'Validates Exhaustion', desc: 'Doesn\'t dismiss or minimise how tired she is — acknowledges it genuinely.' },
+      { title: 'Energy Flip', desc: 'Clearly makes the case that exercise gives energy rather than taking it away.' },
+      { title: '24-Hour Access', desc: 'Uses the 24-hour access as a concrete solution to her time concern.' },
+      { title: 'Makes It Feel Manageable', desc: 'Brings the commitment down to something that feels achievable — not overwhelming.' },
+    ],
+    tip: 'Don\'t argue with her exhaustion — join her in it first, then flip it. "I know" is more powerful than "but actually..." every single time.',
+    tipLabel: '⏱ Aim for 60–90 seconds'
+  },
+  {
+    id: 5, num: '6', subtitle: 'Objection 6 of 6', title: '"I\'m looking at other gyms"',
+    tagline: 'Anchor to women-only',
+    desc: 'Jodie is comparison shopping. Your job is not to run down the competition — it\'s to anchor her back to the reason she came to Fernwood in the first place and isolate what would make her choose today.',
+    objection: 'I\'ve actually got a couple of other gyms I want to look at before I decide. There\'s a new one that just opened nearby and I want to compare before I commit to anything.',
+    context: 'Jodie chose to visit Fernwood specifically. Something brought her here over every other option. Your job is to find out what that was and remind her of it.',
+    tasks: [
+      'Stay confident — don\'t panic or rush into a hard sell',
+      'Ask: "What brought you to Fernwood specifically today — over any other gym?"',
+      'Reiterate the women-only environment and why that matters to her goals',
+      'Know your key differentiators: women-only, NMJ, 24/7 access, community',
+      'Ask what it would take to make a decision today — isolate the deciding factor'
+    ],
+    keyLines: [
+      { label: 'Anchor Question', line: '"Absolutely — can I ask what brought you specifically to Fernwood today, over the other options you\'re looking at?"' },
+      { label: 'Women-Only Anchor', line: '"Everything you told me about wanting a place where you feel comfortable and not judged — that\'s what women-only delivers. You won\'t get that at a mixed gym."' },
+      { label: 'Isolate', line: '"If Fernwood ticked every box for you today, what would stop you getting started? Is it price, the contract, or something else?"' },
+    ],
+    rubric: [
+      { title: 'Stays Confident', desc: 'Doesn\'t panic or launch into a hard sell — remains calm and curious.' },
+      { title: 'Anchor Question', desc: 'Asks what brought her to Fernwood specifically — makes her articulate her own reasons.' },
+      { title: 'Women-Only Differentiator', desc: 'Clearly positions the women-only environment as a key reason to choose Fernwood.' },
+      { title: 'Isolates the Decision', desc: 'Finds out what would make her decide today rather than letting her leave to "compare".' },
+    ],
+    tip: 'When you ask "what brought you to Fernwood specifically?" — she\'ll tell you her own reasons to choose you. Your job then is just to confirm them.',
+    tipLabel: '⏱ Aim for 60–90 seconds'
+  }
+];
+
+// ══ STATE ══
+let state = {
+  name: '', club: '', role: '', currentStage: 0,
+  stageData: Array.from({length: 6}, () => ({ submitted: false, videoBlob: null, videoURL: null }))
+};
+
+let mediaRecorder = null, recordedChunks = [], timerInterval = null, timerSeconds = 0, stream = null;
+
+// ══ SAVE / RESTORE ══
+const DB_NAME = 'fernwood_obj_v1', DB_VER = 1, STORE = 'videos', LS_KEY = 'fernwood_obj_save';
+let _db = null;
+
+function _openDB() { return new Promise(function(resolve) { try { var req = indexedDB.open(DB_NAME, DB_VER); req.onupgradeneeded = function(e) { try { e.target.result.createObjectStore(STORE); } catch(x) {} }; req.onsuccess = function(e) { _db = e.target.result; resolve(true); }; req.onerror = function() { resolve(false); }; } catch(e) { resolve(false); } }); }
+function _saveBlob(key, blob) { return new Promise(function(resolve) { try { if (!_db || !blob) { resolve(); return; } var tx = _db.transaction(STORE, 'readwrite'); tx.objectStore(STORE).put(blob, key); tx.oncomplete = resolve; tx.onerror = resolve; } catch(e) { resolve(); } }); }
+function _loadBlob(key) { return new Promise(function(resolve) { try { if (!_db) { resolve(null); return; } var req = _db.transaction(STORE, 'readonly').objectStore(STORE).get(key); req.onsuccess = function(e) { resolve(e.target.result || null); }; req.onerror = function() { resolve(null); }; } catch(e) { resolve(null); } }); }
+function _clearDB() { return new Promise(function(resolve) { try { if (!_db) { resolve(); return; } var tx = _db.transaction(STORE, 'readwrite'); tx.objectStore(STORE).clear(); tx.oncomplete = resolve; tx.onerror = resolve; } catch(e) { resolve(); } }); }
+function _lsSave(d) { try { localStorage.setItem(LS_KEY, JSON.stringify(d)); } catch(e) {} }
+function _lsLoad() { try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch(e) { return null; } }
+function _lsClear() { try { localStorage.removeItem(LS_KEY); } catch(e) {} }
+
+function saveProgress() {
+  _lsSave({ name: state.name, club: state.club, role: state.role, currentStage: state.currentStage, savedAt: new Date().toISOString(), stageData: state.stageData.map(function(sd) { return { submitted: sd.submitted, hasVideo: !!(sd.videoBlob) }; }) });
+}
+function saveVideoForStage(idx) { var blob = state.stageData[idx] && state.stageData[idx].videoBlob; if (!blob) return Promise.resolve(); return _saveBlob('stage_' + idx, blob); }
+function clearSave() { _lsClear(); _clearDB(); }
+
+function checkSavedProgress() {
+  _openDB().then(function() {
+    var saved = _lsLoad();
+    if (!saved || !saved.name) return;
+    var submittedCount = saved.stageData.filter(function(s) { return s.submitted; }).length;
+    if (submittedCount === 0) return;
+    var banner = document.getElementById('resumeBanner');
+    if (!banner) return;
+    banner.style.display = 'block';
+    document.getElementById('resumeName').textContent = saved.name;
+    document.getElementById('resumeClub').textContent = saved.club;
+    document.getElementById('resumeStages').textContent = submittedCount + ' of 6 objection' + (submittedCount > 1 ? 's' : '') + ' submitted';
+    document.getElementById('resumeDate').textContent = 'Last saved ' + new Date(saved.savedAt).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short' });
+  });
+}
+
+function restoreProgress() {
+  return _openDB().then(function() {
+    var saved = _lsLoad();
+    if (!saved || !saved.name) return false;
+    state.name = saved.name; state.club = saved.club; state.role = saved.role; state.currentStage = saved.currentStage || 0;
+    saved.stageData.forEach(function(sd, i) { state.stageData[i].submitted = sd.submitted; });
+    var promises = saved.stageData.map(function(sd, i) {
+      if (!sd.hasVideo) return Promise.resolve();
+      return _loadBlob('stage_' + i).then(function(blob) { if (blob) { state.stageData[i].videoBlob = blob; state.stageData[i].videoURL = URL.createObjectURL(blob); } });
+    });
+    return Promise.all(promises).then(function() { return true; });
+  }).catch(function() { return false; });
+}
+
+window.addEventListener('DOMContentLoaded', checkSavedProgress);
+
+// ══ REGISTRATION ══
+function startAssessment() {
+  var fn = document.getElementById('regFirstName').value.trim();
+  var ln = document.getElementById('regLastName').value.trim();
+  var club = document.getElementById('regClub').value.trim();
+  var role = document.getElementById('regRole').value;
+  if (!fn || !ln || !club || !role) { alert('Please fill in all fields to begin your assessment.'); return; }
+  state.name = fn + ' ' + ln; state.club = club; state.role = role;
+  clearSave();
+  _openDB().then(function() { showScreen('screen-assessment'); renderStage(0); });
+}
+
+function resumeAssessment() {
+  restoreProgress().then(function(ok) {
+    if (!ok) { alert('No saved progress found.'); return; }
+    var resumeStage = state.stageData.findIndex(function(sd) { return !sd.submitted; });
+    if (resumeStage === -1) resumeStage = 5;
+    showScreen('screen-assessment'); renderStage(resumeStage);
+  });
+}
+
+function discardAndStart() {
+  if (confirm('This will clear your saved progress. Are you sure?')) {
+    clearSave();
+    document.getElementById('resumeBanner').style.display = 'none';
+    state.stageData.forEach(function(sd) { if (sd.videoURL) URL.revokeObjectURL(sd.videoURL); });
+    state.stageData = Array.from({length: 6}, function() { return { submitted: false, videoBlob: null, videoURL: null }; });
+    state.name = ''; state.club = ''; state.role = ''; state.currentStage = 0;
+  }
+}
+
+function showScreen(id) { document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); }); document.getElementById(id).classList.add('active'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+function updateTracker(current) {
+  for (var i = 0; i < 6; i++) {
+    var el = document.getElementById('track-' + i);
+    el.classList.remove('active', 'done');
+    if (i < current) el.classList.add('done');
+    else if (i === current) el.classList.add('active');
+  }
+}
+
+// ══ RENDER STAGE ══
+function renderStage(idx) {
+  state.currentStage = idx;
+  updateTracker(idx);
+  var s = STAGES[idx];
+  var sd = state.stageData[idx];
+
+  var submittedBanner = sd.submitted ? '<div class="submitted-banner" style="margin:0 32px 20px;"><div class="check">✓</div><p>Objection ' + (idx+1) + ' submitted successfully.<span>Your manager will review this video.</span></p></div>' : '';
+
+  var keyLinesHTML = s.keyLines.map(function(kl) { return '<div class="key-line-item"><div class="kl-icon">💬</div><div class="kl-content"><strong>Key Line — ' + kl.label + '</strong><span>' + kl.line + '</span></div></div>'; }).join('');
+  var rubricHTML = s.rubric.map(function(r) { return '<div class="rubric-item"><h4>' + r.title + '</h4><p>' + r.desc + '</p></div>'; }).join('');
+  var tasksHTML = s.tasks.map(function(t) { return '<li>' + t + '</li>'; }).join('');
+
+  var recorderHTML = '';
+  if (sd.submitted) {
+    recorderHTML = '<div class="recorder-box has-video"><div class="video-container"><video src="' + sd.videoURL + '" controls></video><div class="video-label">Objection ' + (idx+1) + ' — Submitted</div></div><p style="color:var(--charcoal-light);font-weight:600;font-size:14px;">✓ Submitted — your manager can now access this recording.</p></div>';
+  } else {
+    var hasVideo = !!sd.videoBlob;
+    if (hasVideo) {
+      recorderHTML = '<div class="recorder-box has-video"><div class="video-container"><video src="' + sd.videoURL + '" controls></video><div class="video-label">Take recorded — ready to submit</div></div><div class="btn-row"><button class="btn btn-outline-red" onclick="retakeVideo(' + idx + ')">↩ Re-record</button><button class="btn btn-forest" onclick="showSubmitForm(' + idx + ')">Submit This Take →</button></div></div>';
+    } else {
+      recorderHTML = '<div class="recorder-box" id="recBox-' + idx + '">' +
+        '<div id="cameraPreview-' + idx + '" style="display:none;"><div class="video-container"><video id="liveFeed-' + idx + '" autoplay muted playsinline style="max-height:280px;"></video><div class="video-label" id="recLabel-' + idx + '">Camera Ready</div></div><div class="timer" id="timer-' + idx + '">0:00</div></div>' +
+        '<div id="idleState-' + idx + '"><div class="rec-icon">🎥</div><div class="rec-title">Record Your Response</div><div class="rec-desc">When you\'re ready, hit record. You can do as many takes as you need — only the take you submit will be reviewed.</div></div>' +
+        '<div class="btn-row"><button class="btn btn-forest" id="startBtn-' + idx + '" onclick="startRecording(' + idx + ')">● Start Recording</button><button class="btn btn-red" id="stopBtn-' + idx + '" onclick="stopRecording(' + idx + ')" style="display:none; background:var(--magenta); color:white;">■ Stop & Review</button></div>' +
+        '<div class="divider-line" style="margin:20px 0;"></div>' +
+        '<div style="text-align:center;"><p style="color:var(--mid);font-size:13px;margin-bottom:10px;">Or upload a pre-recorded video file</p><label class="btn btn-ghost" style="cursor:pointer;">📁 Upload Video<input type="file" accept="video/*" onchange="handleUpload(event,' + idx + ')" style="display:none;"></label></div>' +
+        '</div>';
+    }
+  }
+
+  var submitFormHTML = !sd.submitted ? '<div id="submitForm-' + idx + '" style="display:none;background:var(--charcoal-pale);border-radius:14px;padding:22px 24px;margin-top:16px;"><h4 style="font-size:14px;font-weight:700;color:var(--charcoal-dark);margin-bottom:6px;">Ready to submit Objection ' + (idx+1) + '?</h4><p style="font-size:13px;color:var(--mid);margin-bottom:14px;">Your video will be saved to your Downloads folder and your manager will be notified by email.</p><div class="btn-row-right" style="margin-top:14px;"><button class="btn btn-ghost" onclick="document.getElementById(\'submitForm-' + idx + '\').style.display=\'none\'">Cancel</button><button class="btn btn-primary" id="submitBtn-' + idx + '" onclick="submitStage(' + idx + ')">Submit Objection ' + (idx+1) + ' →</button></div></div>' : '';
+
+  var navHTML = '';
+  if (idx < 5 && sd.submitted) {
+    navHTML = '<div class="btn-row-right"><button class="btn btn-forest" onclick="renderStage(' + (idx+1) + ')">Continue to Objection ' + (idx+2) + ' →</button></div>';
+  } else if (idx === 5 && sd.submitted) {
+    navHTML = '<div style="background:var(--charcoal-dark);border-radius:16px;padding:28px 32px;text-align:center;margin-top:8px;"><div style="font-size:40px;margin-bottom:12px;">🏆</div><div style="font-family:\'Playfair Display\',serif;font-size:22px;font-weight:700;color:white;margin-bottom:10px;">All Six Objections Complete</div><button class="btn btn-primary" onclick="showCompletion()" style="font-size:15px;padding:15px 36px;">View Submission Summary →</button></div>';
+  }
+
+  document.getElementById('stageContainer').innerHTML =
+    '<div class="stage-card">' +
+    '<div class="stage-card-hd"><div class="stage-num-badge">' + s.num + '</div><div class="stage-hd-text"><div class="stage-subtitle">' + s.subtitle + ' · ' + s.tagline + '</div><h2>' + s.title + '</h2><p>' + s.desc + '</p></div></div>' +
+    '<div class="stage-divider"></div>' +
+    '<div class="objection-panel">' +
+      '<div class="s-label">Jodie\'s Objection</div>' +
+      '<div class="objection-bubble"><div class="member-tag">Jodie says —</div><p>' + s.objection + '</p></div>' +
+      '<div style="background:rgba(255,255,255,0.06);border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:12.5px;color:rgba(255,255,255,0.65);line-height:1.6;"><strong style="color:var(--gold-light);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:6px;">Context</strong>' + s.context + '</div>' +
+      '<h3 style="font-size:14px;margin-bottom:8px;color:rgba(255,255,255,0.8);font-family:\'DM Sans\',sans-serif;font-weight:600;">Your tasks:</h3>' +
+      '<ul class="scenario-tasks">' + tasksHTML + '</ul>' +
+    '</div>' +
+    '<div class="key-lines"><div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--charcoal-dark);font-weight:600;margin-bottom:10px;">Key Lines to Use</div>' + keyLinesHTML + '</div>' +
+    '<div class="rubric-section"><div class="rubric-label">What your manager is assessing</div><div class="rubric-grid">' + rubricHTML + '</div></div>' +
+    '<div class="stage-divider"></div>' +
+    '<div style="margin:20px 32px;"><div class="info-tip"><strong>' + s.tipLabel + ' · </strong>' + s.tip + '</div></div>' +
+    submittedBanner +
+    '<div class="recorder-section">' +
+      '<div class="mobile-rec-notice" style="display:none;background:#2A2A2A;border-radius:14px;padding:28px 24px;text-align:center;margin-bottom:16px;"><div style="font-size:36px;margin-bottom:12px;">📱</div><h3 style="font-family:\'Playfair Display\',serif;font-size:18px;font-weight:700;color:white;margin-bottom:16px;">Film on your iPhone, then upload on desktop</h3><p style="font-size:13px;color:rgba(255,255,255,0.7);">Record your response on iPhone Camera, save to Photos, then come back on a desktop and use the Upload Video button.</p></div>' +
+      recorderHTML + submitFormHTML +
+    '</div>' +
+    '</div>' + navHTML;
+}
+
+// ══ RECORDING ══
+function startRecording(idx) {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { alert('Camera access not available. Please use Chrome, Edge or Safari on a desktop, or use the Upload button.'); return; }
+  navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(function(s) {
+    stream = s;
+    document.getElementById('idleState-' + idx).style.display = 'none';
+    document.getElementById('cameraPreview-' + idx).style.display = 'block';
+    document.getElementById('liveFeed-' + idx).srcObject = stream;
+    recordedChunks = [];
+    var mime = getSupportedMime();
+    mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
+    mediaRecorder.ondataavailable = function(e) { if (e.data.size > 0) recordedChunks.push(e.data); };
+    mediaRecorder.onstop = function() { processRecording(idx); };
+    mediaRecorder.start();
+    document.getElementById('startBtn-' + idx).style.display = 'none';
+    document.getElementById('stopBtn-' + idx).style.display = 'inline-flex';
+    document.getElementById('recLabel-' + idx).innerHTML = '<span style="color:var(--magenta)">● RECORDING</span>';
+    timerSeconds = 0;
+    timerInterval = setInterval(function() {
+      timerSeconds++;
+      var m = Math.floor(timerSeconds / 60), sec = timerSeconds % 60;
+      var el = document.getElementById('timer-' + idx);
+      if (el) { el.textContent = m + ':' + String(sec).padStart(2, '0'); el.className = 'timer recording-timer'; }
+    }, 1000);
+  }).catch(function() { alert('Camera access is required. Please allow camera and microphone access, or use the Upload button.'); });
+}
+
+function stopRecording(idx) {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  if (stream) { stream.getTracks().forEach(function(t) { t.stop(); }); stream = null; }
+  clearInterval(timerInterval);
+}
+
+function processRecording(idx) {
+  var blob = new Blob(recordedChunks, { type: getSupportedMime() });
+  state.stageData[idx].videoBlob = blob;
+  state.stageData[idx].videoURL = URL.createObjectURL(blob);
+  renderStage(idx);
+}
+
+function getSupportedMime() {
+  var types = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'];
+  for (var i = 0; i < types.length; i++) { if (MediaRecorder.isTypeSupported(types[i])) return types[i]; }
+  return 'video/webm';
+}
+
+function retakeVideo(idx) {
+  if (state.stageData[idx].videoURL) URL.revokeObjectURL(state.stageData[idx].videoURL);
+  state.stageData[idx].videoBlob = null; state.stageData[idx].videoURL = null;
+  renderStage(idx);
+}
+
+function handleUpload(event, idx) {
+  var file = event.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('video/')) { alert('Please select a video file.'); return; }
+  if (file.size > 500 * 1024 * 1024) { alert('File is too large. Please use a video under 500MB.'); return; }
+  state.stageData[idx].videoBlob = file;
+  state.stageData[idx].videoURL = URL.createObjectURL(file);
+  renderStage(idx);
+}
+
+function showSubmitForm(idx) {
+  var form = document.getElementById('submitForm-' + idx);
+  if (form) { form.style.display = 'block'; form.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+}
+
+// ══ SUBMIT ══
+function submitStage(idx) {
+  var btn = document.getElementById('submitBtn-' + idx);
+  if (btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }
+
+  downloadVideo(idx);
+  sendNotification(idx);
+
+  state.stageData[idx].submitted = true;
+  saveProgress();
+  saveVideoForStage(idx).catch(function() {});
+  showToast('✓ Submitted — video saved to Downloads', 5000);
+
+  setTimeout(function() {
+    renderStage(idx);
+    var allDone = state.stageData.every(function(sd) { return sd.submitted; });
+    if (allDone) { clearSave(); setTimeout(function() { showCompletion(); }, 2000); }
+  }, 1000);
+}
+
+function downloadVideo(idx) {
+  var blob = state.stageData[idx].videoBlob;
+  if (!blob) return;
+  var ext = (blob.type && blob.type.includes('mp4')) ? 'mp4' : 'webm';
+  var fileName = 'Objections_Stage' + (idx+1) + '_' + STAGE_NAMES[idx].replace(/[^a-zA-Z0-9]/g,'') + '_' + state.name.replace(/\s+/g,'_') + '_' + new Date().toISOString().slice(0,10) + '.' + ext;
+  try {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a'); a.href = url; a.download = fileName;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 5000);
+  } catch(e) { console.error('Download failed:', e); }
+}
+
+function sendNotification(idx) {
+  var params = new URLSearchParams();
+  params.append('staffName', state.name);
+  params.append('staffClub', state.club);
+  params.append('staffRole', state.role || '');
+  params.append('stageNum', String(idx + 1));
+  params.append('stageName', STAGE_NAMES[idx]);
+  params.append('objection', STAGES[idx].title);
+  params.append('assessment', 'Objection Handling');
+  params.append('submittedAt', new Date().toLocaleString('en-AU'));
+  params.append('driveFolder', DRIVE_UPLOAD_FOLDER_URL);
+
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString()
+  }).catch(function(err) { console.error('Notification error:', err); });
+}
+
+function showToast(msg, duration) {
+  var toast = document.getElementById('saveToast');
+  if (!toast) return;
+  toast.textContent = msg; toast.classList.add('show');
+  if (duration > 0) setTimeout(function() { toast.classList.remove('show'); }, duration);
+}
+
+function showCompletion() {
+  document.getElementById('completeName').textContent = state.name.split(' ')[0];
+  document.getElementById('completeClub').textContent = state.club;
+  document.getElementById('completeDate').textContent = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+  showScreen('screen-complete');
+}
+
+function resetAll() {
+  clearSave();
+  state.stageData.forEach(function(sd) { if (sd.videoURL) URL.revokeObjectURL(sd.videoURL); });
+  state = { name: '', club: '', role: '', currentStage: 0, stageData: Array.from({length: 6}, function() { return { submitted: false, videoBlob: null, videoURL: null }; }) };
+  document.getElementById('regFirstName').value = '';
+  document.getElementById('regLastName').value = '';
+  document.getElementById('regClub').value = '';
+  document.getElementById('regRole').value = '';
+  showScreen('screen-reg');
+}
+
+</script>
+</body>
+</html>
